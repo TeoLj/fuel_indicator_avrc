@@ -1,19 +1,12 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-#define LENGTH 100  
-   
+#define LENGTH 100
+
 int POTI = A1;
 unsigned long startTime = 0;
 volatile int RingPuffer[LENGTH];
-float Mittelwert_bilden();
-
-
-// falls die Arraylänge klein ist, dann kann die Mittelwertbildung auch innerhalb 
-// der ISR erfolgen und die Genauigkeit ist höher ,da keine Messergebnisse verloren gehen.
-
-// Wenn die Arraylänge sehr groß ist, dann ist es besser die Mittelwertbildung außerhalb erfolgen zu lassen,
-// weil die ISR ansonsten zu lange dauern würde. Die Genauigkeit des Messergebnisses wird nicht beeinträchtigt.
+float average_val();
 
 
 int main()
@@ -32,7 +25,7 @@ int main()
 
   //Referenzspannung interne 5V
   ADMUX |= (1 << REFS0);
-  
+
 
   // Auto trigger enablen
   ADCSRA |= (1 << ADATE);
@@ -53,40 +46,31 @@ int main()
   {
     if ((millis() - startTime) > 1000)
     {
-      Serial.println("Mittelwert: " + String(Mittelwert_bilden()); 
-      startTime = millis();
+      Serial.println("average value: " + String(average_val()));
+                     startTime = millis();
     }
   }
 }
 
-float Mittelwert_bilden()
+float average_val()
 {
-  float mittelwert = 0;
+  float average = 0;
   for (int i = 0; i < LENGTH; i++)
   {
-    mittelwert += RingPuffer[i];
+    average += RingPuffer[i];
   }
 
-  return mittelwert / LENGTH;
+  return average/ LENGTH;
 }
 
 
 
-ISR (ADC_vect)   //Ringpuffer:= neuester Eintrag an anderer Stelle im Kreis 
+ISR (ADC_vect)   //Ringpuffer
 {
-    //*for (int i = LENGTH - 1; i > 0 ; i--)
-    {
-      RingPuffer[i] = RingPuffer[i - 1]; //Shiften der Elemente
-    }
-
-    RingPuffer[0] = ADC;  // neues Element an die erste Stelle */
-
-
-static uint16_t i=0;
-RingPuffer[i]=ADC;
-i++;
-if(i==LENGTH)i=0;
-
+  static uint16_t i = 0;
+  RingPuffer[i] = ADC;
+  i++;
+  if (i == LENGTH)i = 0;
 
 }
 
